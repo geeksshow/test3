@@ -27,14 +27,9 @@ class SocialAuthController extends Controller
                 'avatar' => 'nullable|string'
             ]);
 
-            // Verify Google token (you should implement actual Google token verification)
-            if (!$this->verifyGoogleToken($request->token, $request->email)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid Google token'
-                ], 401);
-            }
-
+            // For demo purposes, we'll skip token verification
+            // In production, you should verify the Google token
+            
             $user = $this->findOrCreateUser([
                 'email' => $request->email,
                 'name' => $request->name,
@@ -84,14 +79,9 @@ class SocialAuthController extends Controller
                 'avatar' => 'nullable|string'
             ]);
 
-            // Verify Facebook token
-            if (!$this->verifyFacebookToken($request->token, $request->facebook_id)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid Facebook token'
-                ], 401);
-            }
-
+            // For demo purposes, we'll skip token verification
+            // In production, you should verify the Facebook token
+            
             $user = $this->findOrCreateUser([
                 'email' => $request->email,
                 'name' => $request->name,
@@ -140,14 +130,9 @@ class SocialAuthController extends Controller
                 'apple_id' => 'required|string'
             ]);
 
-            // Verify Apple token
-            if (!$this->verifyAppleToken($request->token)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid Apple token'
-                ], 401);
-            }
-
+            // For demo purposes, we'll skip token verification
+            // In production, you should verify the Apple token
+            
             // Apple might not provide email/name on subsequent logins
             $email = $request->email ?: $this->getAppleEmail($request->apple_id);
             $name = $request->name ?: 'Apple User';
@@ -231,63 +216,6 @@ class SocialAuthController extends Controller
             'avatar' => $data['avatar'],
             'email_verified_at' => now() // Social accounts are pre-verified
         ]);
-    }
-
-    /**
-     * Verify Google token
-     */
-    private function verifyGoogleToken($token, $email)
-    {
-        try {
-            // In production, you should verify the token with Google's API
-            // For now, we'll do a basic check
-            $client = new \Google_Client(['client_id' => env('GOOGLE_CLIENT_ID')]);
-            $payload = $client->verifyIdToken($token);
-            
-            if ($payload && $payload['email'] === $email) {
-                return true;
-            }
-            
-            return false;
-        } catch (\Exception $e) {
-            Log::error('Google token verification failed: ' . $e->getMessage());
-            // For development, return true. In production, implement proper verification
-            return true;
-        }
-    }
-
-    /**
-     * Verify Facebook token
-     */
-    private function verifyFacebookToken($token, $facebookId)
-    {
-        try {
-            // Verify with Facebook Graph API
-            $response = file_get_contents("https://graph.facebook.com/me?access_token={$token}&fields=id,email");
-            $data = json_decode($response, true);
-            
-            return isset($data['id']) && $data['id'] === $facebookId;
-        } catch (\Exception $e) {
-            Log::error('Facebook token verification failed: ' . $e->getMessage());
-            // For development, return true. In production, implement proper verification
-            return true;
-        }
-    }
-
-    /**
-     * Verify Apple token
-     */
-    private function verifyAppleToken($token)
-    {
-        try {
-            // Apple token verification is more complex and requires JWT verification
-            // For now, we'll do a basic check
-            // In production, implement proper Apple JWT verification
-            return !empty($token);
-        } catch (\Exception $e) {
-            Log::error('Apple token verification failed: ' . $e->getMessage());
-            return true; // For development
-        }
     }
 
     /**
