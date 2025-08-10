@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class JWTAuthController extends Controller
 {
@@ -39,10 +39,16 @@ class JWTAuthController extends Controller
                 ], 422);
             }
 
-            $credentials = $request->only('email', 'password');
+            // Try to authenticate with Laravel's built-in auth
+            if (Auth::attempt($request->only('email', 'password'))) {
+                $user = Auth::user();
+                
+                // Generate a simple token (you can use JWT package later if needed)
+                $token = base64_encode($user->id . '|' . Str::random(40) . '|' . time());
+                
+                // Store token in session for now
+                session(['auth_token' => $token, 'user_id' => $user->id]);
 
-            // Try to authenticate
-            if (!$token = JWTAuth::attempt($credentials)) {
                 Log::warning('Failed login attempt for email: ' . $request->email);
                 return response()->json([
                     'success' => false,
@@ -50,8 +56,6 @@ class JWTAuthController extends Controller
                 ], 401);
             }
 
-            $user = auth()->user();
-            
             Log::info('Successful login for user: ' . $user->email);
 
             return response()->json([
@@ -66,12 +70,6 @@ class JWTAuthController extends Controller
                 ]
             ]);
 
-        } catch (JWTException $e) {
-            Log::error('JWT Exception during login: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Could not create token'
-            ], 500);
         } catch (\Exception $e) {
             Log::error('Login error: ' . $e->getMessage());
             return response()->json([
@@ -102,10 +100,17 @@ class JWTAuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'email_verified_at' => now(), // Auto-verify for JWT users
+                'email_verified_at' => now(), // Auto-verify for now
             ]);
 
-            $token = JWTAuth::fromUser($user);
+            // Generate a simple token
+            $token = base64_encode($user->id . '|' . Str::random(40) . '|' . time());
+            
+            // Store token in session
+            session(['auth_token' => $token, 'user_id' => $user->id]);
+            
+            // Log the user in
+            Auth::login($user);
 
             Log::info('New user registered: ' . $user->email);
 
@@ -133,12 +138,14 @@ class JWTAuthController extends Controller
     public function logout()
     {
         try {
-            JWTAuth::invalidate(JWTAuth::getToken());
+            Auth::logout();
+            session()->forget(['auth_token', 'user_id']);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully logged out'
             ]);
-        } catch (JWTException $e) {
+        } catch (\Exception $e) {
             Log::error('Logout error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
@@ -150,18 +157,20 @@ class JWTAuthController extends Controller
     public function me()
     {
         try {
-            if (!$user = JWTAuth::parseToken()->authenticate()) {
+            if (!Auth::check()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'User not found'
                 ], 404);
             }
 
+            $user = Auth::user();
+            
             return response()->json([
                 'success' => true,
                 'user' => $user
             ]);
-        } catch (JWTException $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Token invalid'
@@ -172,12 +181,22 @@ class JWTAuthController extends Controller
     public function refresh()
     {
         try {
-            $token = JWTAuth::refresh(JWTAuth::getToken());
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+            
+            $user = Auth::user();
+            $token = base64_encode($user->id . '|' . Str::random(40) . '|' . time());
+            session(['auth_token' => $token]);
+            
             return response()->json([
                 'success' => true,
                 'token' => $token
             ]);
-        } catch (JWTException $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Token cannot be refreshed'
