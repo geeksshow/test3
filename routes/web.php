@@ -68,6 +68,11 @@ Route::post('/api/forgot-password', [App\Http\Controllers\Auth\ForgotPasswordCon
 Route::post('/api/verify-otp', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'verifyOTP']);
 Route::post('/api/reset-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword']);
 
+// Social Authentication Routes
+use App\Http\Controllers\Auth\SocialAuthController;
+Route::post('/auth/google', [SocialAuthController::class, 'googleLogin'])->middleware('throttle:5,1');
+Route::post('/auth/facebook', [SocialAuthController::class, 'facebookLogin'])->middleware('throttle:5,1');
+Route::post('/auth/apple', [SocialAuthController::class, 'appleLogin'])->middleware('throttle:5,1');
 
 
 

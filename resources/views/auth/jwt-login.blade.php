@@ -803,15 +803,210 @@
         
         // Social login functions
         function loginWithGoogle() {
-            showNotification('Google login will be implemented soon!', 'info');
+            // Initialize Google Sign-In
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: '{{ env("GOOGLE_CLIENT_ID", "your-google-client-id") }}',
+                    callback: handleGoogleResponse
+                });
+                google.accounts.id.prompt();
+            } else {
+                // Load Google Sign-In script if not loaded
+                loadGoogleScript();
+            }
         }
         
         function loginWithFacebook() {
-            showNotification('Facebook login will be implemented soon!', 'info');
+            // Initialize Facebook SDK
+            if (typeof FB !== 'undefined') {
+                FB.login(function(response) {
+                    if (response.authResponse) {
+                        handleFacebookResponse(response);
+                    } else {
+                        showNotification('Facebook login cancelled', 'error');
+                    }
+                }, {scope: 'email,public_profile'});
+            } else {
+                loadFacebookScript();
+            }
         }
         
         function loginWithApple() {
-            showNotification('Apple login will be implemented soon!', 'info');
+            // Initialize Apple Sign-In
+            if (typeof AppleID !== 'undefined') {
+                AppleID.auth.signIn();
+            } else {
+                loadAppleScript();
+            }
+        }
+        
+        // Load Google Sign-In script
+        function loadGoogleScript() {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.onload = function() {
+                google.accounts.id.initialize({
+                    client_id: '{{ env("GOOGLE_CLIENT_ID", "your-google-client-id") }}',
+                    callback: handleGoogleResponse
+                });
+                google.accounts.id.prompt();
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Load Facebook SDK
+        function loadFacebookScript() {
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId: '{{ env("FACEBOOK_APP_ID", "your-facebook-app-id") }}',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v18.0'
+                });
+                
+                FB.login(function(response) {
+                    if (response.authResponse) {
+                        handleFacebookResponse(response);
+                    } else {
+                        showNotification('Facebook login cancelled', 'error');
+                    }
+                }, {scope: 'email,public_profile'});
+            };
+
+            (function(d, s, id){
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) {return;}
+                js = d.createElement(s); js.id = id;
+                js.src = "https://connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        }
+        
+        // Load Apple Sign-In script
+        function loadAppleScript() {
+            const script = document.createElement('script');
+            script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+            script.onload = function() {
+                AppleID.auth.init({
+                    clientId: '{{ env("APPLE_CLIENT_ID", "your-apple-client-id") }}',
+                    scope: 'name email',
+                    redirectURI: '{{ url("/auth/apple/callback") }}',
+                    state: 'login',
+                    usePopup: true
+                });
+                AppleID.auth.signIn();
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Handle Google response
+        function handleGoogleResponse(response) {
+            const credential = response.credential;
+            const payload = JSON.parse(atob(credential.split('.')[1]));
+            
+            fetch('/auth/google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    token: credential,
+                    email: payload.email,
+                    name: payload.name,
+                    google_id: payload.sub,
+                    avatar: payload.picture
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('jwt_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showNotification('Google login successful!', 'success');
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else {
+                    showNotification(data.message || 'Google login failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Google login error:', error);
+                showNotification('Google login failed', 'error');
+            });
+        }
+        
+        // Handle Facebook response
+        function handleFacebookResponse(response) {
+            FB.api('/me', {fields: 'name,email,picture'}, function(userInfo) {
+                fetch('/auth/facebook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        token: response.authResponse.accessToken,
+                        email: userInfo.email,
+                        name: userInfo.name,
+                        facebook_id: userInfo.id,
+                        avatar: userInfo.picture.data.url
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('jwt_token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        showNotification('Facebook login successful!', 'success');
+                        setTimeout(() => window.location.href = '/', 1500);
+                    } else {
+                        showNotification(data.message || 'Facebook login failed', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Facebook login error:', error);
+                    showNotification('Facebook login failed', 'error');
+                });
+            });
+        }
+        
+        // Handle Apple response (callback from redirect)
+        document.addEventListener('AppleIDSignInOnSuccess', (event) => {
+            const data = event.detail;
+            
+            fetch('/auth/apple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    token: data.authorization.id_token,
+                    email: data.user?.email,
+                    name: data.user?.name ? `${data.user.name.firstName} ${data.user.name.lastName}` : null,
+                    apple_id: data.authorization.code
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('jwt_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showNotification('Apple login successful!', 'success');
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else {
+                    showNotification(data.message || 'Apple login failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Apple login error:', error);
+                showNotification('Apple login failed', 'error');
+            });
+        });
+        
+        document.addEventListener('AppleIDSignInOnFailure', (event) => {
+            console.error('Apple Sign-In failed:', event.detail);
+            showNotification('Apple login failed', 'error');
         }
         
         function showNotification(message, type = 'info') {

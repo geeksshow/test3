@@ -549,15 +549,214 @@
         
         // Social login functions
         function registerWithGoogle() {
-            showNotification('Google registration will be implemented soon!', 'info');
+            loginWithGoogle(); // Same function as login
         }
         
         function registerWithFacebook() {
-            showNotification('Facebook registration will be implemented soon!', 'info');
+            loginWithFacebook(); // Same function as login
         }
         
         function registerWithApple() {
-            showNotification('Apple registration will be implemented soon!', 'info');
+            loginWithApple(); // Same function as login
+        }
+        
+        // Copy all the social login functions from login page
+        function loginWithGoogle() {
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: '{{ env("GOOGLE_CLIENT_ID", "your-google-client-id") }}',
+                    callback: handleGoogleResponse
+                });
+                google.accounts.id.prompt();
+            } else {
+                loadGoogleScript();
+            }
+        }
+        
+        function loginWithFacebook() {
+            if (typeof FB !== 'undefined') {
+                FB.login(function(response) {
+                    if (response.authResponse) {
+                        handleFacebookResponse(response);
+                    } else {
+                        showNotification('Facebook registration cancelled', 'error');
+                    }
+                }, {scope: 'email,public_profile'});
+            } else {
+                loadFacebookScript();
+            }
+        }
+        
+        function loginWithApple() {
+            if (typeof AppleID !== 'undefined') {
+                AppleID.auth.signIn();
+            } else {
+                loadAppleScript();
+            }
+        }
+        
+        // Load scripts and handle responses (same as login page)
+        function loadGoogleScript() {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.onload = function() {
+                google.accounts.id.initialize({
+                    client_id: '{{ env("GOOGLE_CLIENT_ID", "your-google-client-id") }}',
+                    callback: handleGoogleResponse
+                });
+                google.accounts.id.prompt();
+            };
+            document.head.appendChild(script);
+        }
+        
+        function loadFacebookScript() {
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId: '{{ env("FACEBOOK_APP_ID", "your-facebook-app-id") }}',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v18.0'
+                });
+                
+                FB.login(function(response) {
+                    if (response.authResponse) {
+                        handleFacebookResponse(response);
+                    } else {
+                        showNotification('Facebook registration cancelled', 'error');
+                    }
+                }, {scope: 'email,public_profile'});
+            };
+
+            (function(d, s, id){
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) {return;}
+                js = d.createElement(s); js.id = id;
+                js.src = "https://connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        }
+        
+        function loadAppleScript() {
+            const script = document.createElement('script');
+            script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+            script.onload = function() {
+                AppleID.auth.init({
+                    clientId: '{{ env("APPLE_CLIENT_ID", "your-apple-client-id") }}',
+                    scope: 'name email',
+                    redirectURI: '{{ url("/auth/apple/callback") }}',
+                    state: 'register',
+                    usePopup: true
+                });
+                AppleID.auth.signIn();
+            };
+            document.head.appendChild(script);
+        }
+        
+        function handleGoogleResponse(response) {
+            const credential = response.credential;
+            const payload = JSON.parse(atob(credential.split('.')[1]));
+            
+            fetch('/auth/google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    token: credential,
+                    email: payload.email,
+                    name: payload.name,
+                    google_id: payload.sub,
+                    avatar: payload.picture
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('jwt_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showNotification('Google registration successful!', 'success');
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else {
+                    showNotification(data.message || 'Google registration failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Google registration error:', error);
+                showNotification('Google registration failed', 'error');
+            });
+        }
+        
+        function handleFacebookResponse(response) {
+            FB.api('/me', {fields: 'name,email,picture'}, function(userInfo) {
+                fetch('/auth/facebook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        token: response.authResponse.accessToken,
+                        email: userInfo.email,
+                        name: userInfo.name,
+                        facebook_id: userInfo.id,
+                        avatar: userInfo.picture.data.url
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('jwt_token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        showNotification('Facebook registration successful!', 'success');
+                        setTimeout(() => window.location.href = '/', 1500);
+                    } else {
+                        showNotification(data.message || 'Facebook registration failed', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Facebook registration error:', error);
+                    showNotification('Facebook registration failed', 'error');
+                });
+            });
+        }
+        
+        document.addEventListener('AppleIDSignInOnSuccess', (event) => {
+            const data = event.detail;
+            
+            fetch('/auth/apple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    token: data.authorization.id_token,
+                    email: data.user?.email,
+                    name: data.user?.name ? `${data.user.name.firstName} ${data.user.name.lastName}` : null,
+                    apple_id: data.authorization.code
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('jwt_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showNotification('Apple registration successful!', 'success');
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else {
+                    showNotification(data.message || 'Apple registration failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Apple registration error:', error);
+                showNotification('Apple registration failed', 'error');
+            });
+        });
+        
+        document.addEventListener('AppleIDSignInOnFailure', (event) => {
+            console.error('Apple Sign-In failed:', event.detail);
+            showNotification('Apple registration failed', 'error');
         }
         
         function showNotification(message, type = 'info') {
