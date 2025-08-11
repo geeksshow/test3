@@ -413,7 +413,7 @@
                                 
                                 <!-- Menu Items -->
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center py-3" href="/profile" style="color: #fff; transition: all 0.3s ease;">
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="{{ route('profile.view') }}" style="color: #fff; transition: all 0.3s ease;">
                                         <div class="bg-primary bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
                                             <i class="fas fa-user-circle text-primary"></i>
                                         </div>
@@ -425,7 +425,7 @@
                                 </li>
                                 
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center py-3" href="/settings" style="color: #fff; transition: all 0.3s ease;">
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="{{ route('settings.view') }}" style="color: #fff; transition: all 0.3s ease;">
                                         <div class="bg-info bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
                                             <i class="fas fa-cog text-info"></i>
                                         </div>
@@ -437,7 +437,7 @@
                                 </li>
                                 
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center py-3" href="/wishlist" style="color: #fff; transition: all 0.3s ease;">
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="{{ route('wishlist.view') }}" style="color: #fff; transition: all 0.3s ease;">
                                         <div class="bg-danger bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
                                             <i class="fas fa-heart text-danger"></i>
                                         </div>
@@ -450,7 +450,7 @@
                                 </li>
                                 
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center py-3" href="/orders" style="color: #fff; transition: all 0.3s ease;">
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="{{ route('orders.view') }}" style="color: #fff; transition: all 0.3s ease;">
                                         <div class="bg-success bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
                                             <i class="fas fa-shopping-bag text-success"></i>
                                         </div>
