@@ -26,12 +26,14 @@ return new class extends Migration
             }
         });
 
-        // Add indexes only if they don't exist
-        if (!$this->indexExists('users', ['provider', 'provider_id'])) {
-            Schema::table('users', function (Blueprint $table) {
-                $table->index(['provider', 'provider_id']);
-            });
-        }
+        // Add index in a separate schema call to avoid conflicts
+        Schema::table('users', function (Blueprint $table) {
+            try {
+                $table->index(['provider', 'provider_id'], 'users_provider_provider_id_index');
+            } catch (\Exception $e) {
+                // Index might already exist, ignore the error
+            }
+        });
     }
 
     /**
@@ -41,8 +43,10 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Drop index first if it exists
-            if ($this->indexExists('users', ['provider', 'provider_id'])) {
-                $table->dropIndex(['provider', 'provider_id']);
+            try {
+                $table->dropIndex('users_provider_provider_id_index');
+            } catch (\Exception $e) {
+                // Index might not exist, ignore the error
             }
             
             // Drop columns if they exist
@@ -58,21 +62,5 @@ return new class extends Migration
                 $table->dropColumn('provider');
             }
         });
-    }
-
-    /**
-     * Check if an index exists on a table
-     */
-    private function indexExists(string $table, array $columns): bool
-    {
-        $indexes = Schema::getConnection()->getDoctrineSchemaManager()->listTableIndexes($table);
-        
-        foreach ($indexes as $index) {
-            if ($index->getColumns() === $columns) {
-                return true;
-            }
-        }
-        
-        return false;
     }
 };
