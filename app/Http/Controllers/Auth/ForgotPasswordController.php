@@ -145,15 +145,16 @@ class ForgotPasswordController extends Controller
             $email = $request->email;
             $password = $request->password;
 
-            // Verify that OTP was verified (check if record exists)
+            // Verify that OTP was verified (check if record exists and not expired)
             $resetRecord = DB::table('password_resets')
                 ->where('email', $email)
+                ->where('expires_at', '>', Carbon::now())
                 ->first();
 
             if (!$resetRecord) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid request. Please verify OTP first.'
+                    'message' => 'Invalid request. Please verify OTP first or request a new one.'
                 ], 400);
             }
 

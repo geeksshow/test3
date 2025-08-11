@@ -12,13 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('provider')->nullable()->after('password');
-            $table->string('provider_id')->nullable()->after('provider');
-            $table->string('avatar')->nullable()->after('provider_id');
+            // Check if columns don't exist before adding them
+            if (!Schema::hasColumn('users', 'provider')) {
+                $table->string('provider')->nullable()->after('password');
+            }
             
-            // Add indexes for better performance
-            $table->index(['provider', 'provider_id']);
+            if (!Schema::hasColumn('users', 'provider_id')) {
+                $table->string('provider_id')->nullable()->after('provider');
+            }
+            
+            if (!Schema::hasColumn('users', 'avatar')) {
+                $table->string('avatar')->nullable()->after('provider_id');
+            }
         });
+
+        // Add indexes only if they don't exist
+        if (!$this->indexExists('users', ['provider', 'provider_id'])) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->index(['provider', 'provider_id']);
+            });
+        }
     }
 
     /**
@@ -27,8 +40,39 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex(['provider', 'provider_id']);
-            $table->dropColumn(['provider', 'provider_id', 'avatar']);
+            // Drop index first if it exists
+            if ($this->indexExists('users', ['provider', 'provider_id'])) {
+                $table->dropIndex(['provider', 'provider_id']);
+            }
+            
+            // Drop columns if they exist
+            if (Schema::hasColumn('users', 'avatar')) {
+                $table->dropColumn('avatar');
+            }
+            
+            if (Schema::hasColumn('users', 'provider_id')) {
+                $table->dropColumn('provider_id');
+            }
+            
+            if (Schema::hasColumn('users', 'provider')) {
+                $table->dropColumn('provider');
+            }
         });
+    }
+
+    /**
+     * Check if an index exists on a table
+     */
+    private function indexExists(string $table, array $columns): bool
+    {
+        $indexes = Schema::getConnection()->getDoctrineSchemaManager()->listTableIndexes($table);
+        
+        foreach ($indexes as $index) {
+            if ($index->getColumns() === $columns) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 };

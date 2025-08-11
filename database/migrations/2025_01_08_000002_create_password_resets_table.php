@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Drop the table if it exists to recreate it properly
+        Schema::dropIfExists('password_resets');
+        
         Schema::create('password_resets', function (Blueprint $table) {
             $table->id();
-            $table->string('email');
+            $table->string('email')->index();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('expires_at')->nullable();
