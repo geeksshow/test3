@@ -326,6 +326,31 @@
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-badge" id="cartBadge" style="display: none;">0</span>
                 </span>
+                <!-- User Dropdown -->
+                <div class="dropdown">
+                    <span class="icon-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <ul class="dropdown-menu dropdown-menu-end" style="background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 15px; min-width: 250px;">
+                        <li class="px-4 py-3 border-bottom" style="border-color: rgba(255, 255, 255, 0.1);">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-dark"></i>
+                                </div>
+                                <div>
+                                    <div class="text-white fw-semibold">John Doe</div>
+                                    <div class="text-muted small">john@example.com</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li><a class="dropdown-item text-white" href="/profile"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item text-white" href="/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item text-white" href="/wishlist"><i class="fas fa-heart me-2"></i>Wishlist</a></li>
+                        <li><a class="dropdown-item text-white" href="/orders"><i class="fas fa-shopping-bag me-2"></i>Orders</a></li>
+                        <li><hr class="dropdown-divider" style="border-color: rgba(255, 255, 255, 0.1);"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -538,6 +563,15 @@
             // Update cart badge
             updateCartBadge();
         });
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user');
+                showNotification('Logged out successfully!', 'success');
+                setTimeout(() => window.location.href = '/jwt/login', 1500);
+            }
+        }
 
         // Add to cart function
         function addToCart(productId) {

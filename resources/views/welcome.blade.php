@@ -392,6 +392,90 @@
                             <i class="fas fa-shopping-cart"></i>
                             <span class="cart-badge" id="cartBadge" style="display: none;">0</span>
                         </span>
+                        <!-- User Dropdown -->
+                        <div class="dropdown">
+                            <span class="icon-user dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <ul class="dropdown-menu dropdown-menu-end" style="background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 15px; min-width: 250px;">
+                                <!-- User Info Header -->
+                                <li class="px-4 py-3 border-bottom" style="border-color: rgba(255, 255, 255, 0.1);">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-dark"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-white fw-semibold">John Doe</div>
+                                            <div class="text-muted small">john@example.com</div>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                                <!-- Menu Items -->
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="/profile" style="color: #fff; transition: all 0.3s ease;">
+                                        <div class="bg-primary bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="fas fa-user-circle text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">Profile</div>
+                                            <div class="small text-muted">Manage your account</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="/settings" style="color: #fff; transition: all 0.3s ease;">
+                                        <div class="bg-info bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="fas fa-cog text-info"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">Settings</div>
+                                            <div class="small text-muted">Preferences & privacy</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="/wishlist" style="color: #fff; transition: all 0.3s ease;">
+                                        <div class="bg-danger bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="fas fa-heart text-danger"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">Wishlist</div>
+                                            <div class="small text-muted">Saved items</div>
+                                        </div>
+                                        <span class="badge bg-danger ms-auto">3</span>
+                                    </a>
+                                </li>
+                                
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="/orders" style="color: #fff; transition: all 0.3s ease;">
+                                        <div class="bg-success bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="fas fa-shopping-bag text-success"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">Orders</div>
+                                            <div class="small text-muted">Order history</div>
+                                        </div>
+                                        <span class="badge bg-warning text-dark ms-auto">2</span>
+                                    </a>
+                                </li>
+                                
+                                <!-- Divider -->
+                                <li><hr class="dropdown-divider" style="border-color: rgba(255, 255, 255, 0.1);"></li>
+                                
+                                <!-- Logout -->
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" href="#" onclick="logout()" style="color: #dc3545; transition: all 0.3s ease;">
+                                        <div class="bg-danger bg-opacity-20 rounded-lg d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                            <i class="fas fa-sign-out-alt text-danger"></i>
+                                        </div>
+                                        <div class="fw-medium">Logout</div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     
                     <div class="auth-buttons">
@@ -685,6 +769,23 @@
             }, 5000);
         }
 
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear any stored tokens
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user');
+                
+                // Show logout message
+                showNotification('Logged out successfully!', 'success');
+                
+                // Redirect after delay
+                setTimeout(() => {
+                    window.location.href = '/jwt/login';
+                }, 1500);
+            }
+        }
+
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -696,6 +797,22 @@
                         block: 'start'
                     });
                 }
+            });
+        });
+
+        // Enhanced dropdown hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+                    this.style.transform = 'translateX(5px)';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                    this.style.transform = 'translateX(0)';
+                });
             });
         });
     </script>

@@ -212,6 +212,28 @@
                 <a class="nav-link active" href="/keyboard">Keyboards</a>
                 <a class="nav-link" href="/mouse">Mice</a>
             </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white cursor-pointer hover:text-yellow-400 transition-colors">
+                    <i class="fas fa-search text-xl"></i>
+                </span>
+                <span class="text-white cursor-pointer hover:text-yellow-400 transition-colors" onclick="window.location.href='/cart'">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                </span>
+                <!-- User Dropdown -->
+                <div class="dropdown">
+                    <span class="text-white cursor-pointer hover:text-yellow-400 transition-colors dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user text-xl"></i>
+                    </span>
+                    <ul class="dropdown-menu dropdown-menu-end" style="background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 15px; min-width: 200px;">
+                        <li><a class="dropdown-item text-white" href="/profile"><i class="fas fa-user-circle me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item text-white" href="/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item text-white" href="/wishlist"><i class="fas fa-heart me-2"></i>Wishlist</a></li>
+                        <li><a class="dropdown-item text-white" href="/orders"><i class="fas fa-shopping-bag me-2"></i>Orders</a></li>
+                        <li><hr class="dropdown-divider" style="border-color: rgba(255, 255, 255, 0.1);"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -375,6 +397,15 @@
                     notification.remove();
                 }
             }, 5000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user');
+                showNotification('Logged out successfully!', 'success');
+                setTimeout(() => window.location.href = '/jwt/login', 1500);
+            }
         }
     </script>
 </body>

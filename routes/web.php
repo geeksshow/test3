@@ -79,6 +79,22 @@ Route::post('/auth/google', [SocialAuthController::class, 'googleLogin'])->middl
 Route::post('/auth/facebook', [SocialAuthController::class, 'facebookLogin'])->middleware('throttle:5,1');
 Route::post('/auth/apple', [SocialAuthController::class, 'appleLogin'])->middleware('throttle:5,1');
 
+// User Pages Routes
+Route::get('/profile', function () {
+    return view('profile');
+})->name('profile.view');
+
+Route::get('/settings', function () {
+    return view('settings');
+})->name('settings.view');
+
+Route::get('/wishlist', function () {
+    return view('wishlist');
+})->name('wishlist.view');
+
+Route::get('/orders', function () {
+    return view('orders');
+})->name('orders.view');
 
 
 
