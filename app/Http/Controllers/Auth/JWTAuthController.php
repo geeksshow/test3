@@ -40,7 +40,9 @@ class JWTAuthController extends Controller
             }
 
             // Try to authenticate with Laravel's built-in auth
-            if (Auth::attempt($request->only('email', 'password'))) {
+            $credentials = $request->only('email', 'password');
+            
+            if (Auth::attempt($credentials)) {
                 $user = Auth::user();
                 
                 // Generate a simple token (you can use JWT package later if needed)
@@ -49,26 +51,26 @@ class JWTAuthController extends Controller
                 // Store token in session for now
                 session(['auth_token' => $token, 'user_id' => $user->id]);
 
+                Log::info('Successful login for user: ' . $user->email);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'token' => $token,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'email_verified_at' => $user->email_verified_at,
+                    ]
+                ]);
+            } else {
                 Log::warning('Failed login attempt for email: ' . $request->email);
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid email or password'
                 ], 401);
             }
-
-            Log::info('Successful login for user: ' . $user->email);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'token' => $token,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'email_verified_at' => $user->email_verified_at,
-                ]
-            ]);
 
         } catch (\Exception $e) {
             Log::error('Login error: ' . $e->getMessage());

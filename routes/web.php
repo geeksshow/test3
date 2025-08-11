@@ -47,8 +47,8 @@ Route::get('/api/cart-count', [ApiController::class, 'getCartCount']);
 // JWT Auth routes (views and actions)
 Route::get('/jwt/login', [JWTAuthController::class, 'showLoginForm'])->name('jwt.login');
 Route::get('/jwt/register', [JWTAuthController::class, 'showRegisterForm'])->name('jwt.register');
-Route::post('/jwt/login', [JWTAuthController::class, 'login'])->middleware('throttle:5,1')->name('jwt.login.submit');
-Route::post('/jwt/register', [JWTAuthController::class, 'register'])->middleware('throttle:3,1')->name('jwt.register.submit');
+Route::post('/jwt/login', [JWTAuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/jwt/register', [JWTAuthController::class, 'register'])->middleware('throttle:3,1');
 Route::post('/jwt/logout', [JWTAuthController::class, 'logout'])->name('jwt.logout');
 
 // Email verification routes
